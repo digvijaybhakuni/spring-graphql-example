@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graphql-app-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: graphqlapp
+  template:
+    metadata:
+      labels:
+      - app: graphqlapp
+    spec:
+      containers:
+      - image: docker.io/digvijayb/posts-graphql:latest
+        name: posts-graphql-app
+        volumeMounts:
+          - name: app-config-vol
+            mountPath: /app/resources/application.properties
+            subPath: application.properties
+        ports:
+          - containerPort: 8080
+      volumes:
+        - name: app-config-vol # To access this volume, this name must be used inside volumeMounts of the container
+          configMap:
+            name: graphqlapp-config # Name of the configMap
+            items:
+              - key: application.properties # Name of the item we had used inside our ConfigMap (under data:)
+                path: application.properties  # Name of the file to be placed inside /conf dir
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: graphqlsvc
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: graphqlapp
